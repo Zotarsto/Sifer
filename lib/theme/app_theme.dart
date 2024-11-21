@@ -1,19 +1,14 @@
 import 'package:flutter/material.dart';
 
-class AppTheme {
-  static const primaryColor = Colors.blueGrey;
-
-  static final themeData = ThemeData(
-    primarySwatch: Colors.blueGrey,
-    scaffoldBackgroundColor: Colors.white,
-  );
-
-  static final inputDecoration = InputDecoration(
-    prefixIcon: const Icon(Icons.filter_list),
-    suffixIcon: const Icon(Icons.close),
-    labelText: 'Buscar',
-    border: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(30.0),
-    ),
-  );
-}
+final ThemeData appTheme = ThemeData(
+  primaryColor: Colors.blue.shade900,
+  hintColor: Colors.blue.shade300,
+  scaffoldBackgroundColor: const Color.fromARGB(255, 255, 255, 255),
+  textTheme: TextTheme(
+    bodyMedium: TextStyle(color: Colors.blue.shade900),
+  ),
+  buttonTheme: ButtonThemeData(
+    buttonColor: Colors.blue.shade900,
+    textTheme: ButtonTextTheme.primary,
+  ),
+);
