@@ -6,6 +6,8 @@ import 'screens/ventas_screen.dart';
 import 'screens/inventario_screen.dart';
 import 'screens/registro_producto_screen.dart';
 import 'theme/app_theme.dart';
+import 'screens/consulta_producto_screen.dart';
+import 'screens/confirmacion-venta-screen.dart';
 
 void main() {
   runApp(MyApp());
@@ -24,6 +26,8 @@ class MyApp extends StatelessWidget {
         '/ventas': (context) => VentasScreen(),
         '/inventario': (context) => InventarioScreen(),
         '/registroProducto': (context) => RegistroProductoScreen(),
+        '/consultaProducto': (context) => ConsultaProductoScreen(),
+        '/confirmacionVenta': (context) => ConfirmacionVentaScreen()
       },
     );
   }

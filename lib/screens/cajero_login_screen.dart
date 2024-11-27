@@ -39,7 +39,7 @@ class _CajeroLoginScreenState extends State<CajeroLoginScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(data["mensaje"])),
         );
-        Navigator.pushNamed(context, '/ventas');
+        Navigator.pushNamed(context, '/consultaProducto');
       } else {
         // Manejo de errores
         final error = jsonDecode(response.body);
