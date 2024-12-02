@@ -15,10 +15,26 @@ class _RegistroProductoScreenState extends State<RegistroProductoScreen> {
   final TextEditingController _precioController = TextEditingController();
   final TextEditingController _stockController = TextEditingController();
 
-  Future<void> _agregarProducto() async {
+  Map<String, dynamic>? producto; // Para editar producto
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    // Obtiene los datos del producto si fueron enviados
+    producto = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+
+    if (producto != null) {
+      _nombreController.text = producto!['nombre'];
+      _descripcionController.text = producto!['descripcion'];
+      _precioController.text = producto!['precio'].toString();
+      _stockController.text = producto!['stock'].toString();
+    }
+  }
+
+  Future<void> _guardarProducto() async {
     if (!_formKey.currentState!.validate()) return;
 
-    // Datos del formulario
     final String nombre = _nombreController.text;
     final String descripcion = _descripcionController.text;
     final double? precio = double.tryParse(_precioController.text);
@@ -31,37 +47,45 @@ class _RegistroProductoScreenState extends State<RegistroProductoScreen> {
       return;
     }
 
-    // Endpoint del backend
-    final Uri url = Uri.parse("http://localhost:3000/api/productos");
+    final Uri url = producto == null
+        ? Uri.parse("http://localhost:3000/api/productos") // Crear nuevo producto
+        : Uri.parse("http://localhost:3000/api/productos/${producto!['id']}"); // Actualizar producto existente
 
     try {
-      // Enviar solicitud POST al backend
-      final response = await http.post(
-        url,
-        headers: {"Content-Type": "application/json"},
-        body: jsonEncode({
-          "nombre": nombre,
-          "descripcion": descripcion,
-          "precio": precio,
-          "stock": stock,
-        }),
-      );
+      final response = await (producto == null
+          ? http.post(
+              url,
+              headers: {"Content-Type": "application/json"},
+              body: jsonEncode({
+                "nombre": nombre,
+                "descripcion": descripcion,
+                "precio": precio,
+                "stock": stock,
+              }),
+            )
+          : http.put(
+              url,
+              headers: {"Content-Type": "application/json"},
+              body: jsonEncode({
+                "nombre": nombre,
+                "descripcion": descripcion,
+                "precio": precio,
+                "stock": stock,
+              }),
+            ));
 
-      if (response.statusCode == 201) {
-        // Registro exitoso
+      if (response.statusCode == 201 || response.statusCode == 200) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Producto registrado con éxito")),
+          SnackBar(content: Text(producto == null ? "Producto registrado con éxito" : "Producto actualizado con éxito")),
         );
-        Navigator.pop(context); // Regresa al inventario después de registrar
+        Navigator.pop(context);
       } else {
-        // Manejo de errores del backend
         final error = jsonDecode(response.body);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(error["mensaje"] ?? "Error al registrar el producto")),
+          SnackBar(content: Text(error["mensaje"] ?? "Error al guardar el producto")),
         );
       }
     } catch (e) {
-      // Error de conexión o servidor
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Error de conexión: $e")),
       );
@@ -70,10 +94,12 @@ class _RegistroProductoScreenState extends State<RegistroProductoScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final String titulo = producto == null ? "Registrar Producto" : "Editar Producto";
+
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          "Registrar Producto",
+          titulo,
           style: TextStyle(
             fontSize: 25,
             fontWeight: FontWeight.bold,
@@ -84,7 +110,7 @@ class _RegistroProductoScreenState extends State<RegistroProductoScreen> {
         leading: IconButton(
           icon: Icon(FeatherIcons.arrowLeft, color: Colors.white),
           onPressed: () {
-            Navigator.pop(context); // Retrocede a la pantalla anterior
+            Navigator.pop(context);
           },
         ),
       ),
@@ -97,7 +123,7 @@ class _RegistroProductoScreenState extends State<RegistroProductoScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Text(
-                  "Registrar Nuevo Producto",
+                  titulo,
                   style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
@@ -183,10 +209,13 @@ class _RegistroProductoScreenState extends State<RegistroProductoScreen> {
                 ),
                 SizedBox(height: 30),
                 ElevatedButton.icon(
-                  onPressed: _agregarProducto,
-                  icon: Icon(FeatherIcons.plusCircle, color: Colors.white),
+                  onPressed: _guardarProducto,
+                  icon: Icon(
+                    producto == null ? FeatherIcons.plusCircle : FeatherIcons.save,
+                    color: Colors.white,
+                  ),
                   label: Text(
-                    "Registrar Producto",
+                    producto == null ? "Registrar Producto" : "Guardar Cambios",
                     style: TextStyle(color: Colors.white),
                   ),
                   style: ElevatedButton.styleFrom(

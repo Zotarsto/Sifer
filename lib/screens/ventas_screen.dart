@@ -269,7 +269,7 @@ class _VentasScreenState extends State<VentasScreen> {
                       );
                     },
                     child: Text(
-                      "Confirmar Venta",
+                      "Resumen de Venta",
                       style: TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,

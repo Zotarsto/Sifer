@@ -10,6 +10,7 @@ class InventarioScreen extends StatefulWidget {
 
 class _InventarioScreenState extends State<InventarioScreen> {
   List<dynamic> productos = [];
+  bool isLoading = true; // Indicador de carga
 
   @override
   void initState() {
@@ -37,7 +38,7 @@ class _InventarioScreenState extends State<InventarioScreen> {
                 style: TextStyle(color: Colors.blue.shade900),
               ),
               onPressed: () {
-                Navigator.of(context).pop(); // Cierra el cuadro de diálogo
+                Navigator.of(context).pop();
               },
             ),
             TextButton(
@@ -46,8 +47,8 @@ class _InventarioScreenState extends State<InventarioScreen> {
                 style: TextStyle(color: Colors.red),
               ),
               onPressed: () {
-                Navigator.of(context).pop(); // Cierra el cuadro de diálogo
-                _eliminarProducto(productoId); // Llama a la función de eliminación
+                Navigator.of(context).pop();
+                _eliminarProducto(productoId);
               },
             ),
           ],
@@ -56,8 +57,8 @@ class _InventarioScreenState extends State<InventarioScreen> {
     );
   }
 
-  // Obtener productos desde el backend
   Future<void> _obtenerProductos() async {
+    setState(() => isLoading = true);
     final Uri url = Uri.parse("http://localhost:3000/api/productos");
 
     try {
@@ -69,18 +70,15 @@ class _InventarioScreenState extends State<InventarioScreen> {
           productos = data;
         });
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Error al obtener los productos")),
-        );
+        _mostrarSnackBar("Error al obtener los productos");
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Error de conexión: $e")),
-      );
+      _mostrarSnackBar("Error de conexión: $e");
+    } finally {
+      setState(() => isLoading = false);
     }
   }
 
-  // Eliminar producto desde el backend
   Future<void> _eliminarProducto(int id) async {
     final Uri url = Uri.parse("http://localhost:3000/api/productos/$id");
 
@@ -88,31 +86,36 @@ class _InventarioScreenState extends State<InventarioScreen> {
       final response = await http.delete(url);
 
       if (response.statusCode == 200) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Producto eliminado con éxito")),
-        );
-        _obtenerProductos(); // Actualizar la lista después de eliminar
+        _mostrarSnackBar("Producto eliminado con éxito");
+        _obtenerProductos();
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Error al eliminar el producto")),
-        );
+        _mostrarSnackBar("Error al eliminar el producto");
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Error de conexión: $e")),
-      );
+      _mostrarSnackBar("Error de conexión: $e");
     }
+  }
+
+  void _mostrarSnackBar(String mensaje) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(mensaje)),
+    );
   }
 
   void _irARegistrarProducto(BuildContext context) {
     Navigator.pushNamed(context, '/registroProducto').then((_) => _obtenerProductos());
   }
 
+  void _irAEditarProducto(BuildContext context, Map<String, dynamic> producto) {
+    Navigator.pushNamed(context, '/registroProducto', arguments: producto)
+        .then((_) => _obtenerProductos());
+  }
+
   void _menuSeleccionado(BuildContext context, String opcion) {
     if (opcion == 'ventas') {
-      Navigator.pushNamed(context, '/ventas');
-    } else if (opcion == 'cajeros') {
-      Navigator.pushNamed(context, '/cajeroLogin');
+      Navigator.pushNamed(context, '/consultaVenta');
+    } else if (opcion == 'reportes') {
+      Navigator.pushNamed(context, '/reportesVenta'); 
     }
   }
 
@@ -142,8 +145,8 @@ class _InventarioScreenState extends State<InventarioScreen> {
                 child: Text('Ir a Ventas'),
               ),
               PopupMenuItem(
-                value: 'cajeros',
-                child: Text('Ir a Cajeros'),
+                value: 'reportes',
+                child: Text('Ir a Reporte de Ventas'),
               ),
             ],
           ),
@@ -154,97 +157,110 @@ class _InventarioScreenState extends State<InventarioScreen> {
             color: Colors.white,
           ),
           onPressed: () {
-            Navigator.pop(context); // Retrocede a la pantalla anterior
+            Navigator.pop(context);
           },
         ),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(10.0),
-        child: productos.isEmpty
-            ? Center(
-                child: Text(
-                  "No hay productos disponibles",
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.blue.shade900,
-                  ),
-                ),
-              )
-            : ListView.builder(
-                itemCount: productos.length,
-                itemBuilder: (context, index) {
-                  final producto = productos[index];
-                  return Card(
-                    elevation: 5,
-                    margin: EdgeInsets.symmetric(vertical: 10),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(15),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(10.0),
-                      child: Row(
-                        children: [
-                          Container(
-                            height: 60,
-                            width: 60,
-                            decoration: BoxDecoration(
-                              color: Colors.blue.shade900,
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: Center(
-                              child: Icon(
-                                FeatherIcons.box,
-                                color: Colors.white,
-                                size: 30,
-                              ),
-                            ),
+      body: isLoading
+          ? Center(child: CircularProgressIndicator(color: Colors.blue.shade900))
+          : Padding(
+              padding: const EdgeInsets.all(10.0),
+              child: productos.isEmpty
+                  ? Center(
+                      child: Text(
+                        "No hay productos disponibles",
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.blue.shade900,
+                        ),
+                      ),
+                    )
+                  : ListView.builder(
+                      itemCount: productos.length,
+                      itemBuilder: (context, index) {
+                        final producto = productos[index];
+                        return Card(
+                          elevation: 5,
+                          margin: EdgeInsets.symmetric(vertical: 10),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(15),
                           ),
-                          SizedBox(width: 15),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                          child: Padding(
+                            padding: const EdgeInsets.all(10.0),
+                            child: Row(
                               children: [
-                                Text(
-                                  producto['nombre'],
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 16,
-                                  ),
-                                ),
-                                SizedBox(height: 5),
-                                Text(
-                                  producto['descripcion'],
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: Colors.grey[700],
-                                  ),
-                                ),
-                                SizedBox(height: 5),
-                                Text(
-                                  "Precio: \$${producto['precio'].toStringAsFixed(2)} | Stock: ${producto['stock']} unidades",
-                                  style: TextStyle(
-                                    fontSize: 14,
+                                Container(
+                                  height: 60,
+                                  width: 60,
+                                  decoration: BoxDecoration(
                                     color: Colors.blue.shade900,
+                                    borderRadius: BorderRadius.circular(10),
                                   ),
+                                  child: Center(
+                                    child: Icon(
+                                      FeatherIcons.box,
+                                      color: Colors.white,
+                                      size: 30,
+                                    ),
+                                  ),
+                                ),
+                                SizedBox(width: 15),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        producto['nombre'],
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 16,
+                                        ),
+                                      ),
+                                      SizedBox(height: 5),
+                                      Text(
+                                        producto['descripcion'],
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          color: Colors.grey[700],
+                                        ),
+                                      ),
+                                      SizedBox(height: 5),
+                                      Text(
+                                        "Precio: \$${producto['precio'].toStringAsFixed(2)} | Stock: ${producto['stock']} unidades",
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          color: Colors.blue.shade900,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                Column(
+                                  children: [
+                                    IconButton(
+                                      icon: Icon(
+                                        FeatherIcons.edit,
+                                        color: Colors.orange,
+                                      ),
+                                      onPressed: () => _irAEditarProducto(context, producto),
+                                    ),
+                                    IconButton(
+                                      icon: Icon(
+                                        FeatherIcons.trash,
+                                        color: Colors.red,
+                                      ),
+                                      onPressed: () => _mostrarAlertaConfirmacion(context, producto['id']),
+                                    ),
+                                  ],
                                 ),
                               ],
                             ),
                           ),
-                          IconButton(
-                            icon: Icon(
-                              FeatherIcons.trash,
-                              color: Colors.red,
-                            ),
-                            onPressed: () => _mostrarAlertaConfirmacion(context, producto['id']),
-                          ),
-                        ],
-                      ),
+                        );
+                      },
                     ),
-                  );
-                },
-              ),
-      ),
+            ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _irARegistrarProducto(context),
         backgroundColor: Colors.blue.shade900,

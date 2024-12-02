@@ -8,6 +8,8 @@ import 'screens/registro_producto_screen.dart';
 import 'theme/app_theme.dart';
 import 'screens/consulta_producto_screen.dart';
 import 'screens/confirmacion-venta-screen.dart';
+import 'screens/consulta_ventas_screen.dart';
+import 'screens/reportes_venta_screen.dart';
 
 void main() {
   runApp(MyApp());
@@ -27,7 +29,9 @@ class MyApp extends StatelessWidget {
         '/inventario': (context) => InventarioScreen(),
         '/registroProducto': (context) => RegistroProductoScreen(),
         '/consultaProducto': (context) => ConsultaProductoScreen(),
-        '/confirmacionVenta': (context) => ConfirmacionVentaScreen()
+        '/confirmacionVenta': (context) => ConfirmacionVentaScreen(),
+        '/consultaVenta': (context) => ConsultaVentasScreen(),
+        '/reportesVenta': (context) => ReportesScreen()
       },
     );
   }
